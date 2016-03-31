@@ -127,6 +127,15 @@ class Application(QtGui.QMainWindow):
         self.subcircuit=QtGui.QAction(QtGui.QIcon('../../images/subckt.png'),'<b>Subcircuit</b>',self)
         self.subcircuit.triggered.connect(self.open_subcircuit)
 
+	self.vhdl_text = QtGui.QAction(QtGui.QIcon('../../images/ngspice.png'), '<b>VHDL code editor</b>', self)
+        self.vhdl_text.triggered.connect(self.create_vhdl)
+
+        self.vhdl_tb_text=QtGui.QAction(QtGui.QIcon('../../images/ngspice.png'), '<b>Test Bench Editor</b>', self)
+        self.vhdl_tb_text.triggered.connect(self.create_vhdl_tb)
+
+        self.ghdl = QtGui.QAction(QtGui.QIcon('../../images/ngspice.png'), '<b>Digital Simulation</b>', self)
+        self.ghdl.triggered.connect(self.open_ghdl)
+
         self.nghdl = QtGui.QAction(QtGui.QIcon('../../images/nghdl.png'), '<b>Nghdl</b>', self)
         self.nghdl.triggered.connect(self.open_nghdl)
         
@@ -147,6 +156,9 @@ class Application(QtGui.QMainWindow):
         self.lefttoolbar.addAction(self.nghdl)
         self.lefttoolbar.addAction(self.omedit)
         self.lefttoolbar.addAction(self.omoptim)
+        self.lefttoolbar.addAction(self.ghdl)
+        self.lefttoolbar.addAction(self.vhdl_text)
+        self.lefttoolbar.addAction(self.vhdl_tb_text)
         self.lefttoolbar.setOrientation(QtCore.Qt.Vertical)
         self.lefttoolbar.setIconSize(QSize(40,40))
     
@@ -232,7 +244,79 @@ class Application(QtGui.QMainWindow):
         print "Current Project is : ",self.obj_appconfig.current_project
         self.obj_Mainview.obj_dockarea.usermanual()    
     
+    def create_vhdl(self):
+	"""
+	This function open an editor to create vhdl code
+	"""    
+	self.projDir = self.obj_appconfig.current_project["ProjectName"]
+
+	if self.projDir != None:
+	    self.projName = os.path.basename(self.projDir)
+	    self.cmd = "gedit "+self.projDir+"/"+self.projName+".vhdl &"
+	    self.obj_workThread = Worker.WorkerThread(self.cmd)
+	    self.obj_workThread.start()
+	else:
+	    self.msg = QtGui.QErrorMessage(None)
+	    self.msg.showMessage('Error while opening gedit')
+	    self.obj_appconfig.print_error('Error while opening gedit. Please make sure gedit is installed')
+            self.msg.setWindowTitle('gedit Error Message')
+
+    def create_vhdl_tb(self):
+	"""
+	This function open an editor to create vhdl test bench code
+	"""    
+	self.projDir = self.obj_appconfig.current_project["ProjectName"]
+
+	if self.projDir != None:
+	    self.projName = os.path.basename(self.projDir)
+	    self.cmd = "gedit "+self.projDir+"/"+self.projName+"_tb.vhdl &"
+	    self.obj_workThread = Worker.WorkerThread(self.cmd)
+	    self.obj_workThread.start()
+	else:
+	    self.msg = QtGui.QErrorMessage(None)
+	    self.msg.showMessage('Error while opening gedit')
+	    self.obj_appconfig.print_error('Error while opening gedit. Please make sure gedit is installed')
+            self.msg.setWindowTitle('gedit Error Message')
     
+    def open_ghdl(self):
+	""""
+	This function execute ghdl from current folder
+	"""
+	self.projDir = self.obj_appconfig.current_project["ProjectName"]
+	print self.projDir
+	
+	if self.projDir != None:
+	    self.projName = os.path.basename(self.projDir)
+	    self.ghdl_file = os.path.join(self.projDir,self.projName+".vhdl")
+	    try:
+		
+	        self.cmd1 = "ghdl -a "+self.projDir+"/"+self.projName+".vhdl;" 
+		self.cmd2 = "ghdl -a "+self.projDir+"/"+self.projName+"_tb.vhdl;"
+		self.cmd3 = " ghdl -e "+self.projDir+"/"+self.projName
+		self.cmd4 = " ghdl -r "+self.projDir+"/"+self.projName+" --vcd="+self.projName+".vcd;" 
+		self.cmd5 = "gtkwave "+self.projDir+"/"+self.projName+".vcd"
+		
+		#self.cmd = "ghdl -a "+self.projName+".vhdl && ghdl -a "+self.projName+"_tb.vhdl" #ghdl -a "+sel.projName+"_tb.vhdl"
+		self.obj_workThread1 = Worker.WorkerThread(self.cmd1)
+                self.obj_workThread1.start()
+		self.obj_workThread2 = Worker.WorkerThread(self.cmd2) 
+		self.obj_workThread2.start()
+		self.obj_workThread3 = Worker.WorkerThread(self.cmd3)
+		self.obj_workThread3.start()
+		self.obj_workThread4 = Worker.WorkerThread(self.cmd4)
+		self.obj_workThread4.start()
+		self.obj_workThread5 = Worker.WorkerThread(self.cmd5)
+		self.obj_workThread5.start()
+
+	    except Exception as e:
+	
+		pass
+		
+	else:
+	    self.msg = QtGui.QErrorMessage()
+	    self.msg.showMessage('Please select the project first. You can either create new project or open existing project')
+	    self.msg.setWindowTitle("Error Message")  
+ 
     def open_ngspice(self):
         """
         This Function execute ngspice on current project
